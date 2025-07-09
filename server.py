@@ -15,8 +15,6 @@ DATA_PAYLOAD_SIZE = 1400 # Tamanho dos dados (em bytes) que serão incluídos em
 BUFFER_SIZE = HEADER_SIZE + DATA_PAYLOAD_SIZE + 512 # Tamanho do buffer de recebimento (com folga)
 
 FLAG_LAST = 0x01 # Flag para indicar o último segmento
-
-# --- Funções Auxiliares ---
 def calculate_checksum(data):
     """Calcula um checksum simples (soma dos bytes modulo 65536)."""
     s = 0
@@ -32,7 +30,6 @@ def send_segment(sock, addr, seq_num, data, is_last=False):
     segment = header + data
     try:
         sock.sendto(segment, addr)
-        # logging.debug(f"Enviado Seg {seq_num}, Size {len(data)}, Checksum {checksum}, Last: {is_last} para {addr}")
     except socket.error as e:
         logging.error(f"Erro ao enviar segmento {seq_num} para {addr}: {e}")
 
@@ -104,13 +101,12 @@ def start_server(host='0.0.0.0', port=9999):
                         while True:
                             data = f.read(DATA_PAYLOAD_SIZE)
                             if not data:
-                                break # Fim do arquivo
+                                break 
 
-                            # Determina se é o último segmento lido
                             is_last_segment = (f.tell() == file_size)
                             send_segment(udp_socket, client_address, seq_num, data, is_last_segment)
                             seq_num += 1
-                            time.sleep(0.001) # Pequena pausa (1 milissegundo) opcionalmente adicionada para evitar sobrecarregar redes mais lentas ou sistemas com processamento limitado, dando tempo para o processamento e evitando potencial perda de pacotes devido à velocidade excessiva de envio.
+                            time.sleep(0.001) # pausa (1 milissegundo) opcionalmente adicionada para evitar sobrecarregar redes mais lentas ou sistemas com processamento limitado, dando tempo para o processamento e evitando potencial perda de pacotes devido à velocidade excessiva de envio.
 
                     logging.info(f"Transmissão de {filename_req} para {client_address} concluída (enviados {seq_num} segmentos).")
 
@@ -151,22 +147,12 @@ def start_server(host='0.0.0.0', port=9999):
 
             else:
                  logging.warning(f"Mensagem desconhecida recebida de {client_address}: {message_str[:100]}")
-
-
-        except socket.timeout:
-             # recvfrom pode ter timeout se configurado, mas aqui não está.
-             # Útil se precisássemos fazer tarefas periódicas.
-             continue
         except Exception as e:
             logging.error(f"Erro fatal no loop principal do servidor: {e}", exc_info=True)
-            # Considerar reiniciar o socket ou sair dependendo da gravidade
 
-    udp_socket.close() # Normalmente não alcançado no loop infinito
+    udp_socket.close()
     logging.info("Servidor encerrado.")
 
 
 if __name__ == "__main__":
-    # Exemplo: Crie um arquivo 'large_test_file.txt' com mais de 1MB
-    # dd if=/dev/urandom of=large_test_file.txt bs=1M count=5 # Linux/macOS
-    # fsutil file createnew large_test_file.txt 5242880 # Windows (5MB)
     start_server(port=9999)
